@@ -1,6 +1,7 @@
 import time
 from settings import *
 from bluetooth import *
+from bleak import BleackScanner, BleackClient
 
 # query dongle configuration with dongle index
 dongle = 1
@@ -12,7 +13,7 @@ dongle_config = get_config(dongle)
 # client_socket: connection instance (peripheral in BLE)
 # message: data to be sent
 # interval: waiting time limit between write and read operations
-def inject_message(mode, client_socket, message, interval=0.5):
+async def inject_message(mode, client_socket, message, interval=0.5):
     if mode == 2:
         # BLE
         BLE_write_with_response(client_socket, message, interval)  # client_socket is a peripheral instance
@@ -102,6 +103,7 @@ def fuzz(mode, client_socket):
 # Main
 if dongle_config.mode == 2:      
     # Bluetooth LE
+    devices = await BleakScanner.discover();
     cm = pyble.CentralManager()
     if cm.ready:
         target = None
