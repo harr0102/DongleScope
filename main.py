@@ -1,6 +1,8 @@
 import time
 from settings import *
 from bluetooth import *
+import asyncio
+from bleak import BleakScanner, BleakClient
 
 # query dongle configuration with dongle index
 dongle = 1
@@ -102,58 +104,85 @@ def fuzz(mode, client_socket):
 # Main
 if dongle_config.mode == 2:      
     # Bluetooth LE
-    cm = pyble.CentralManager()
-    if cm.ready:
-        target = None
-        device_list = []
-        p = None
-        scan_interval = 50  # number of scans
-        for i in range(scan_interval):
-            try:
-                target = cm.startScan()
-                if target:
-                    if target not in device_list:
-                        device_list.append(target)
-                    if str(target).__contains__(dongle_config.name):
-                        print ("Target dongle %s found, connecting to it..." % dongle_config.name)
-                        p = cm.connectPeripheral(target)
-                        break
+    # NAME OF DEVICE
+    configUuid = json.dumps(dongle_config.uuid)
+    name = dongle_config.name
+    print ("######################################")
+    print ("name: " + dongle_config.name) 
+    print ("configUuid: " + configUuid)
+    print ("######################################")
+    
+    
 
-            except Exception as e:
-                print (e)
+    async def run():
+        devices = await BleakScanner.discover()
 
-        if p is None:
-            for d in device_list:
-                print (d)
-            print ("Target Dongle %s not found." % dongle_config.name)
-        else:
-            target.delegate = MyPeripheral
-            for service in p:
-                print (service)
-                for characteristic in service:
-                    print (characteristic, " : ",)
-                    print (characteristic.value)
+        for d in devices:
+            if(name == d.name):
+                print ("|> match found")
+                client = BleakClient(d.address)
+                try:
+                    await client.connect()
+                    print("Services")
+                except Exception as e:
+                    print(e)
+                finally:
+                    await client.disconnect()
+
+    print ("Done")
+
+    #cm = pyble.CentralManager()
+    #if cm.ready:
+    #    target = None
+    #    device_list = []
+    #    p = None
+    #    scan_interval = 50  # number of scans
+    #    for i in range(scan_interval):
+    #        try:
+    #            target = cm.startScan()
+    #            if target:
+    #                if target not in device_list:
+    #                    device_list.append(target)
+    #                if str(target).__contains__(dongle_config.name):
+    #                    print ("Target dongle %s found, connecting to it..." % dongle_config.name)
+    #                    p = cm.connectPeripheral(target)
+    #                    break
+
+    #        except Exception as e:
+    #            print (e)
+
+       # if p is None:
+            #for d in device_list:
+            #    print (d)
+           # print ("Target Dongle %s not found." % dongle_config.name)
+        #else:
+            #target.delegate = MyPeripheral
+            #for service in p:
+            #    print (service)
+            #    for characteristic in service:
+            #       print (characteristic, " : ",)
+            #        print (characteristic.value)
 
             # get corresponding read/write uuids
-            if dongle_config.uuid != "":
-                service_uuid = dongle_config.uuid.keys()[0]
-                read_uuid = dongle_config.uuid.get(service_uuid)[0]
-                write_uuid = dongle_config.uuid.get(service_uuid)[1]
-                c_write = p[service_uuid][write_uuid]
-                c_read = p[service_uuid][read_uuid]
+            #if dongle_config.uuid != "":
+            #    service_uuid = dongle_config.uuid.keys()[0]
+            #    read_uuid = dongle_config.uuid.get(service_uuid)[0]
+            #    write_uuid = dongle_config.uuid.get(service_uuid)[1]
+            #    c_write = p[service_uuid][write_uuid]
+            #    c_read = p[service_uuid][read_uuid]
 
-            else:
-                c_write = ""
-                c_read = ""
+            #else:
+            #    c_write = ""
+            #    c_read = ""
 
-            p.setNotifyForCharacteristic(True, c_read.instance)
+            #p.setNotifyForCharacteristic(True, c_read.instance)
 
             # TODO BLE, perform CAN bus message injection
-            dongle_init(2, p)
+            #dongle_init(2, p)
             # test_input(2, p)
             # read_VIN(2, p)
             # fuzz(2, p)
             # filter_test(2, p)
-            cm.disconnectPeripheral(p)
+            #cm.disconnectPeripheral(p)
 
 
