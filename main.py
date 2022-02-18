@@ -13,19 +13,7 @@ dongle_config = get_config(dongle)
 # message: data to be sent
 # interval: waiting time limit between write and read operations
 def inject_message(mode, client_socket, message, interval=0.5):
-    if mode == 0:
-        # Wi-Fi
-        client_socket.send(b"%s\r" % message)
-        time.sleep(interval)
-        data = client_socket.recv(1024)
-        print('Received: ', repr(data))
-    elif mode == 1:
-        # Bluetooth
-        client_socket.send(b"%s\r" % message)
-        time.sleep(interval)
-        data = client_socket.recv(1024)
-        print('Received: ', repr(data))
-    else:
+    if mode == 2:
         # BLE
         BLE_write_with_response(client_socket, message, interval)  # client_socket is a peripheral instance
 
