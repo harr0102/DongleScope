@@ -101,6 +101,24 @@ def fuzz(mode, client_socket):
         time.sleep(fuzz_speed)
 
 
+async def run():
+    print ("run")
+    devices = await BleakScanner.discover()
+    
+    for d in devices:
+        if(name == d.name):
+            print ("|> match found")
+            client = BleakClient(d.address)
+            try:
+                await client.connect()
+                print("Services")
+            except Exception as e:
+                print(e)
+            finally:
+                await client.disconnect()
+
+    print ("--- END ---")
+
 # Main
 if dongle_config.mode == 2:      
     # Bluetooth LE
@@ -111,25 +129,10 @@ if dongle_config.mode == 2:
     print ("name: " + dongle_config.name) 
     print ("configUuid: " + configUuid)
     print ("######################################")
-    
-    
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(run())
 
-    async def run():
-        devices = await BleakScanner.discover()
 
-        for d in devices:
-            if(name == d.name):
-                print ("|> match found")
-                client = BleakClient(d.address)
-                try:
-                    await client.connect()
-                    print("Services")
-                except Exception as e:
-                    print(e)
-                finally:
-                    await client.disconnect()
-
-    print ("Done")
 
     #cm = pyble.CentralManager()
     #if cm.ready:
