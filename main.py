@@ -1,8 +1,6 @@
 import time
 from settings import *
 from bluetooth import *
-import pyble
-from OBDPeripheral import MyPeripheral
 
 # query dongle configuration with dongle index
 dongle = 1
@@ -56,7 +54,7 @@ def dongle_init(mode, client_socket):
     for cmd in cmd_set:
         inject_message(mode, client_socket, cmd)
         # time.sleep(1)
-    print "Dongle init finish"
+    print ("Dongle init finish")
     print
 
 
@@ -66,7 +64,7 @@ def filter_test(mode, client_socket):
     for cmd in cmd_set:
         inject_message(mode, client_socket, cmd)
         # time.sleep(1)
-    print "Filter test finish"
+    print ("Filter test finish")
     print
 
 
@@ -75,7 +73,7 @@ def To_KM_L(mode, client_socket):
     cmd_set = ['ATCRA 7C8', 'ATFCSH 7C0', '3E1', 'ATE0', '3BA280']
     for cmd in cmd_set:
         inject_message(mode, client_socket, cmd)
-    print "To KM_L finish"
+    print ("To KM_L finish")
     print
 
 
@@ -84,7 +82,7 @@ def To_MPG(mode, client_socket):
     cmd_set = ['ATE0', 'ATRV', 'ATCRA 7C8', 'ATFCSH 7C0', '3E1', 'ATE0', '3BA240']
     for cmd in cmd_set:
         inject_message(mode, client_socket, cmd)
-    print "To KM_L finish"
+    print ("To KM_L finish")
     print
 
 
@@ -93,7 +91,7 @@ def read_VIN(mode, client_socket):
     cmd_set = ["ATD", "ATE0", "AT AT 0", "ATS0", "ATH0", "ATCAF 1", "AT ST 96", "AT SP 7", "09 02"]
     for cmd in cmd_set:
         inject_message(mode, client_socket, cmd)
-    print "Read VIN finish"
+    print ("Read VIN finish")
     print
 
 
@@ -114,50 +112,7 @@ def fuzz(mode, client_socket):
 
 
 # Main
-if dongle_config.mode == 0:
-    # Wi-Fi
-    HOST = dongle_config.address          # Standard loopback interface address (localhost)
-    PORT = dongle_config.port        # Port to listen on (non-privileged ports are > 1023)
-    print "Connection: ip=%s, port=%d" % (HOST, PORT)
-
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((HOST, PORT))
-
-    # TODO WIFI, perform CAN bus message injection
-    dongle_init(0, s)
-    # To_MPG(0, s)
-    # read_VIN(0, s)
-    # filter_test(0, s)
-
-
-elif dongle_config.mode == 1:
-    # Classic Bluetooth
-    print "Scanning nearby devices..."
-    devices = discover_devices(lookup_names=True)
-
-    for addr, name in devices:
-        print "%s - %s" % (addr, name)
-        if name.strip() == dongle_config.name:
-            dongle_config.address = addr
-
-        if dongle_config.address != "":
-            client_socket = BluetoothSocket(RFCOMM)
-            service_matches = find_service(address=addr)
-            print service_matches
-
-            client_socket.connect((dongle_config.address, dongle_config.port))
-
-            # TODO Bluetooth, perform CAN bus message injection
-            dongle_init(1, client_socket)
-            # test_input(1, client_socket)
-            # read_VIN(1, client_socket)
-            # filter_test(1, client_socket)
-
-            client_socket.close()
-
-        else:
-            print "[!] Device name %s not found!" % dongle_config.name
-else:
+if dongle_config.mode == 2:      
     # Bluetooth LE
     cm = pyble.CentralManager()
     if cm.ready:
@@ -172,24 +127,24 @@ else:
                     if target not in device_list:
                         device_list.append(target)
                     if str(target).__contains__(dongle_config.name):
-                        print "Target dongle %s found, connecting to it..." % dongle_config.name
+                        print ("Target dongle %s found, connecting to it..." % dongle_config.name)
                         p = cm.connectPeripheral(target)
                         break
 
             except Exception as e:
-                print e
+                print (e)
 
         if p is None:
             for d in device_list:
-                print d
-            print "Target Dongle %s not found." % dongle_config.name
+                print (d)
+            print ("Target Dongle %s not found." % dongle_config.name)
         else:
             target.delegate = MyPeripheral
             for service in p:
-                print service
+                print (service)
                 for characteristic in service:
-                    print characteristic, " : ",
-                    print characteristic.value
+                    print (characteristic, " : ",)
+                    print (characteristic.value)
 
             # get corresponding read/write uuids
             if dongle_config.uuid != "":
@@ -212,4 +167,5 @@ else:
             # fuzz(2, p)
             # filter_test(2, p)
             cm.disconnectPeripheral(p)
+
 
